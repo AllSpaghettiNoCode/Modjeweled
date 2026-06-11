@@ -17,6 +17,143 @@ ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue") 
 
 
+class StartupScreen:
+    """Startup splash screen with loading animation."""
+    
+    def __init__(self):
+        self.root = ctk.CTk()
+        self.root.title("Modjeweled")
+        self.root.geometry("500x350")
+        self.root.resizable(False, False)
+        self.root.overrideredirect(True)  # Remove window decorations
+        
+        # Center the window
+        screen_width = self.root.winfo_screenwidth()
+        screen_height = self.root.winfo_screenheight()
+        x = (screen_width - 500) // 2
+        y = (screen_height - 350) // 2
+        self.root.geometry(f"500x350+{x}+{y}")
+        
+        self.create_ui()
+        self.loading_progress = 0
+        self.loading_texts = [
+            "Initializing...",
+            "Loading settings...",
+            "Checking game paths...",
+            "Preparing mod tools...",
+            "Almost ready..."
+        ]
+        self.current_text_index = 0
+        
+    def create_ui(self):
+        """Create the startup screen UI."""
+        # Main frame with border
+        self.main_frame = ctk.CTkFrame(self.root, corner_radius=15, border_width=2, border_color="#3B8ED0")
+        self.main_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        
+        # App title
+        self.title_label = ctk.CTkLabel(
+            self.main_frame, 
+            text="MODJEWELED",
+            font=("Helvetica", 32, "bold"),
+            text_color="#3B8ED0"
+        )
+        self.title_label.pack(pady=(40, 10))
+        
+        # Subtitle
+        self.subtitle_label = ctk.CTkLabel(
+            self.main_frame,
+            text="Bejeweled 3 Modding Tool",
+            font=("Helvetica", 14),
+            text_color="gray70"
+        )
+        self.subtitle_label.pack(pady=(0, 20))
+        
+        # Version
+        self.version_label = ctk.CTkLabel(
+            self.main_frame,
+            text="Version 2.0",
+            font=("Helvetica", 12),
+            text_color="gray50"
+        )
+        self.version_label.pack(pady=(0, 30))
+        
+        # Loading text
+        self.loading_label = ctk.CTkLabel(
+            self.main_frame,
+            text="Initializing...",
+            font=("Helvetica", 12),
+            text_color="gray70"
+        )
+        self.loading_label.pack(pady=(20, 10))
+        
+        # Progress bar
+        self.progress_bar = ctk.CTkProgressBar(
+            self.main_frame,
+            width=400,
+            height=12,
+            corner_radius=6
+        )
+        self.progress_bar.pack(pady=(0, 20))
+        self.progress_bar.set(0)
+        
+        # Status text
+        self.status_label = ctk.CTkLabel(
+            self.main_frame,
+            text="",
+            font=("Helvetica", 10),
+            text_color="gray50"
+        )
+        self.status_label.pack(pady=(0, 20))
+        
+        # Copyright
+        self.copyright_label = ctk.CTkLabel(
+            self.main_frame,
+            text="Unofficial Bejeweled 3 Mod Tool",
+            font=("Helvetica", 9),
+            text_color="gray40"
+        )
+        self.copyright_label.pack(side="bottom", pady=20)
+        
+    def update_loading(self):
+        """Update loading progress."""
+        self.loading_progress += 0.02
+        
+        # Update progress bar
+        self.progress_bar.set(min(self.loading_progress, 1.0))
+        
+        # Update loading text based on progress
+        text_index = min(int(self.loading_progress * len(self.loading_texts)), len(self.loading_texts) - 1)
+        if text_index != self.current_text_index:
+            self.current_text_index = text_index
+            self.loading_label.configure(text=self.loading_texts[text_index])
+        
+        # Update status with percentage
+        percentage = int(min(self.loading_progress * 100, 100))
+        self.status_label.configure(text=f"{percentage}%")
+        
+        if self.loading_progress < 1.0:
+            self.root.after(50, self.update_loading)
+        else:
+            self.root.after(200, self.finish_loading)
+    
+    def finish_loading(self):
+        """Finish loading and transition to main app."""
+        self.root.destroy()
+        self.start_main_app()
+    
+    def start_main_app(self):
+        """Start the main application."""
+        root = ctk.CTk()
+        app = BejeweledModder(root)
+        root.mainloop()
+    
+    def run(self):
+        """Run the startup screen."""
+        self.root.after(100, self.update_loading)
+        self.root.mainloop()
+
+
 class BejeweledModder:
     """Main application class for Bejeweled 3 modding tool."""
     
@@ -1099,9 +1236,6 @@ class BejeweledModder:
                     background_idx = i
                 if 'ColorCount' in lines[i] and '=' in lines[i]:
                     colorcount_idx = i
-            
-            if section_end == -1:
-                section_end = len(lines)
         
         debug_output = []
         debug_output.append(f"=== DEBUG INFO FOR {quest_name.upper()} ===\n")
@@ -1180,7 +1314,7 @@ class BejeweledModder:
             if in_butterflies:
                 for key, var in self.butterflies_vars.items():
                     if key in line and '=' in line:
-                        new_line = re.sub(rf'({key}\s*=\s*)[-\d.]+', rf'\g<1>{var.get()}', line)
+                        new_line = re.sub(rf'({key}\s*=\s*)[-\d.]+', rf'\g<<1>{var.get()}', line)
                         break
             
             new_lines.append(new_line)
@@ -1252,7 +1386,7 @@ class BejeweledModder:
             if in_poker:
                 for key, var in self.poker_vars.items():
                     if key in line and '=' in line:
-                        new_line = re.sub(rf'({key}\s*=\s*)\d+', rf'\g<1>{var.get()}', line)
+                        new_line = re.sub(rf'({key}\s*=\s*)\d+', rf'\g<<1>{var.get()}', line)
                         break
                 
                 if 'HandValues' in line and '=' in line:
@@ -1341,7 +1475,7 @@ class BejeweledModder:
                                              f'{key} = "{var.get()}"', line)
                         else:
                             new_line = re.sub(rf'({key}\s*=\s*)[-\d.]+', 
-                                             rf'\g<1>{var.get()}', line)
+                                             rf'\g<<1>{var.get()}', line)
                         break
                 
                 for key, var in self.icestorm_levels.items():
@@ -1485,10 +1619,10 @@ class BejeweledModder:
                         if isinstance(var, ctk.BooleanVar):
                             value = "true" if var.get() else "false"
                             new_line = re.sub(rf'({key}\s*=\s*)(true|false)', 
-                                             rf'\g<1>{value}', line, flags=re.IGNORECASE)
+                                             rf'\g<<1>{value}', line, flags=re.IGNORECASE)
                         elif isinstance(var, ctk.IntVar):
                             new_line = re.sub(rf'({key}\s*=\s*)\d+', 
-                                             rf'\g<1>{var.get()}', line)
+                                             rf'\g<<1>{var.get()}', line)
                         elif isinstance(var, ctk.StringVar):
                             new_line = re.sub(rf'{key}\s*=\s*"[^"]+"', 
                                              f'{key} = "{var.get()}"', line)
@@ -1634,8 +1768,16 @@ class BejeweledModder:
             messagebox.showwarning("Warning", "Please set the QuickBMS executable path first.\n\nGo to Tools > Set QuickBMS Path")
             return
         
+        if not os.path.exists(self.quickbms_path.get()):
+            messagebox.showerror("Error", f"QuickBMS executable not found at:\n{self.quickbms_path.get()}\n\nPlease set the correct path via Tools > Set QuickBMS Path")
+            return
+        
         if not self.script_path.get():
             messagebox.showwarning("Warning", "Please set the 7x7m.bms script path first.\n\nGo to Tools > Set Script Path")
+            return
+        
+        if not os.path.exists(self.script_path.get()):
+            messagebox.showerror("Error", f"BMS script not found at:\n{self.script_path.get()}\n\nPlease set the correct path via Tools > Set Script Path")
             return
         
         main_pak_path = os.path.join(self.game_path.get(), self.MAIN_PAK)
@@ -1658,8 +1800,9 @@ class BejeweledModder:
                 try:
                     result = subprocess.run(cmd, capture_output=True, text=True, cwd=self.game_path.get())
                     self.root.after(0, lambda: self.extraction_complete(result))
-                except Exception as e:
-                    self.root.after(0, lambda: messagebox.showerror("Error", f"Extraction failed:\n{str(e)}"))
+                except Exception as ex:
+                    error_msg = str(ex)
+                    self.root.after(0, lambda msg=error_msg: messagebox.showerror("Error", f"Extraction failed:\n{msg}"))
             
             thread = threading.Thread(target=run_extraction)
             thread.start()
@@ -1671,7 +1814,22 @@ class BejeweledModder:
         """Handle extraction completion."""
         if result.returncode == 0:
             self.status_var.set("Extraction complete!")
-            messagebox.showinfo("Success", "main.pak extracted successfully!\n\nYou can now load the config file.")
+            
+            # Rename main.pak to main.pak.bak after successful extraction
+            main_pak_path = os.path.join(self.game_path.get(), self.MAIN_PAK)
+            main_pak_bak_path = main_pak_path + ".bak"
+            rename_message = ""
+            
+            if os.path.exists(main_pak_path):
+                try:
+                    if os.path.exists(main_pak_bak_path):
+                        os.remove(main_pak_bak_path)
+                    os.rename(main_pak_path, main_pak_bak_path)
+                    rename_message = f"\n\n✓ Renamed main.pak to main.pak.bak\n(This is required for mods to work)"
+                except Exception as e:
+                    rename_message = f"\n\n⚠ Could not rename main.pak:\n{str(e)}"
+            
+            messagebox.showinfo("Success", f"main.pak extracted successfully!\n\nYou can now load the config file.{rename_message}")
         else:
             self.status_var.set("Extraction failed")
             messagebox.showerror("Error", f"Extraction failed:\n{result.stderr}")
@@ -1920,22 +2078,9 @@ class BejeweledModder:
                         self.script_path.set(script_path)
                         self.save_settings()
                         
-                        main_pak_path = os.path.join(self.game_path.get(), self.MAIN_PAK)
-                        main_pak_bak_path = main_pak_path + ".bak"
-                        rename_message = ""
-                        
-                        if os.path.exists(main_pak_path):
-                            try:
-                                if os.path.exists(main_pak_bak_path):
-                                    os.remove(main_pak_bak_path)
-                                os.rename(main_pak_path, main_pak_bak_path)
-                                rename_message = f"\n\n✓ Renamed main.pak to main.pak.bak\n(This is required for mods to work)"
-                            except Exception as e:
-                                rename_message = f"\n\n⚠ Could not rename main.pak:\n{str(e)}"
-                        
                         messagebox.showinfo("Success", 
                             f"7x7m.bms downloaded successfully!\n\nLocation: {script_path}\n\n"
-                            f"The path has been set automatically.{rename_message}")
+                            "The path has been set automatically.")
                         download_window.destroy()
                     
                     self.root.after(0, on_success)
@@ -2052,10 +2197,9 @@ TIPS:
 
 
 def main():
-    """Main entry point."""
-    root = ctk.CTk()
-    app = BejeweledModder(root)
-    root.mainloop()
+    """Main entry point - shows startup screen then main app."""
+    startup = StartupScreen()
+    startup.run()
 
 
 if __name__ == "__main__":
